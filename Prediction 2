@@ -1,0 +1,84 @@
+predict.py
+
+import pandas as pd
+import joblib
+
+# Load the trained models and scaler
+log_reg = joblib.load('stroke_prediction_logistic_regression1.pkl')
+nn_clf = joblib.load('stroke_prediction_neural_network1.pkl')
+ada_clf = joblib.load('stroke_prediction_adaboost1.pkl')
+scaler = joblib.load('scaler4.pkl')
+
+# Define the preprocess_user_input function
+def preprocess_user_input(user_input):
+    # Define all possible categorical features based on the training data
+    cat_features = ['gender_Female', 'gender_Male', 'gender_Other',
+                    'ever_married_No', 'ever_married_Yes',
+                    'work_type_Govt_job', 'work_type_Never_worked', 'work_type_Private',
+                    'work_type_Self-employed', 'work_type_children',
+                    'Residence_type_Rural', 'Residence_type_Urban',
+                    'smoking_status_Unknown', 'smoking_status_formerly_smoked',
+                    'smoking_status_never_smoked', 'smoking_status_smokes']
+    
+    # Create a DataFrame with all categorical features
+    encoded_cat_data = pd.DataFrame(0, index=[0], columns=cat_features)
+    
+    # Set the corresponding feature values based on user input
+    for feature, value in user_input.items():
+        if feature in cat_features:
+            encoded_cat_data.loc[0, feature] = 1 if value.lower() == 'yes' else 0
+    
+    # Combine encoded categorical features with numerical features
+    processed_user_data = pd.concat([encoded_cat_data, pd.DataFrame(user_input, index=[0])], axis=1)
+    
+    # Get feature names from the scaler
+    feature_names = scaler.get_feature_names_out()
+    
+    # Align column names with those seen by the scaler during fitting
+    processed_user_data = processed_user_data.reindex(columns=feature_names, fill_value=0)
+    
+    # Scale the features using the previously trained scaler
+    scaled_user_data = scaler.transform(processed_user_data)
+    
+    return scaled_user_data
+
+# Get user input
+user_input = {}
+print("Please provide the following information:")
+user_input['gender'] = input("Gender (Male/Female/Other): ")
+user_input['age'] = int(input("Age (in years): "))
+user_input['hypertension'] = int(input("Hypertension (0 for No, 1 for Yes): "))
+user_input['heart_disease'] = int(input("Heart Disease (0 for No, 1 for Yes): "))
+user_input['ever_married'] = input("Ever Married (Yes/No): ")
+user_input['work_type'] = input("Work Type (Private, Self-employed, Govt_job, children, Never_worked): ")
+user_input['Residence_type'] = input("Residence Type (Urban/Rural): ")
+user_input['avg_glucose_level'] = float(input("Average Glucose Level (in mg/dL): "))
+user_input['bmi'] = float(input("BMI (Body Mass Index): "))
+user_input['smoking_status'] = input("Smoking Status (formerly_smoked, never_smoked, smokes, Unknown): ")
+
+# Preprocess user input
+scaled_user_input = preprocess_user_input(user_input)
+
+# Make predictions using each model
+log_reg_prediction = log_reg.predict(scaled_user_input)
+nn_prediction = nn_clf.predict(scaled_user_input)
+ada_prediction = ada_clf.predict(scaled_user_input)
+
+# Print predictions
+print("\nPrediction using Logistic Regression:")
+if log_reg_prediction[0] == 1:
+    print("The prediction indicates a stroke risk.")
+else:
+    print("The prediction indicates no stroke risk.")
+
+print("\nPrediction using Neural Network:")
+if nn_prediction[0] == 1:
+    print("The prediction indicates a stroke risk.")
+else:
+    print("The prediction indicates no stroke risk.")
+
+print("\nPrediction using AdaBoost:")
+if ada_prediction[0] == 1:
+    print("The prediction indicates a stroke risk.")
+else:
+    print("The prediction indicates no stroke risk.")
