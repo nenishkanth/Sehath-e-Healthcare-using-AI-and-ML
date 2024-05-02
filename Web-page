@@ -1,0 +1,354 @@
+<?php
+session_start();
+require_once 'dbConfig.php';
+
+function authenticateUser($username, $password) {
+    global $conn;
+    // Prepare SQL statement to check user credentials
+    $sql = "SELECT * FROM users WHERE username = ? AND password = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("ss", $username, $password);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if($result->num_rows == 1) {
+        // Login successful, set session variables
+        $_SESSION['username'] = $username;
+        return true;
+    } else {
+        // Login failed
+        return false;
+    }
+}
+
+function isLoggedIn() {
+    return isset($_SESSION['username']);
+}
+
+function logout() {
+    // Unset all session variables
+    session_unset();
+    // Destroy the session
+    session_destroy();
+}
+
+?>
+<?php
+session_start();
+require_once 'dbConfig.php';
+
+// Check if the user is logged in
+if (!isset($_SESSION['username'])) {
+    // Redirect to the login page if not logged in
+    header("Location: login.php");
+    exit;
+}
+
+// Retrieve user's information from the database
+$username = $_SESSION['username'];
+$sql = "SELECT p.* FROM patients p JOIN users u ON p.user_id = u.id WHERE u.username = ?";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("s", $username);
+$stmt->execute();
+$result = $stmt->get_result();
+
+if ($result->num_rows > 0) {
+    // User found, fetch user details
+    $row = $result->fetch_assoc();
+    $name = $row['name'];
+    $phone = $row['phone'];
+    $address = $row['address'];
+    $profilePhoto = $row['profile_photo'];
+    $healthHistory = $row['health_history'];
+} else {
+    // Redirect to profile completion page if user details are incomplete
+    header("Location: profilecompletion.php");
+    exit;
+}
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h2>Welcome to Your Dashboard</h2>
+        <p class="welcome-message">Hello, <?php echo $name; ?>! Here's your dashboard:</p>
+        <div class="profile-details">
+            <h3>Your Profile Details</h3>
+            <p><strong>Name:</strong> <?php echo $name; ?></p>
+            <p><strong>Phone:</strong> <?php echo $phone; ?></p>
+            <p><strong>Address:</strong> <?php echo $address; ?></p>
+            <!-- Display profile photo here -->
+            <p><strong>Health History:</strong> <?php echo $healthHistory; ?></p>
+        </div>
+        <a href="logout.php" class="logout-btn">Logout</a>
+    </div>
+</body>
+</html>
+<?php
+$servername = "localhost";
+$username = "root";
+$password = "";
+$dbname = "e_healthcare_db";
+
+$conn = new mysqli($servername, $username, $password, $dbname);
+
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+?>
+<?php session_start(); ?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link
+      href="https://cdn.jsdelivr.net/npm/remixicon@3.4.0/fonts/remixicon.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <title>Web Design Mastery | MEDIBuddy</title>
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <div class="nav__logo">SEHATH CONNECT</div>
+            <ul class="nav__links">
+                <li class="link"><a href="#">About Us</a></li>
+                <li class="link"><a href="#">Contact</a></li>
+            </ul>
+            <button class="dropdown-button" onclick="toggleDropdown()">Login</button>
+            <div class="dropdown-content" id="myDropdown">
+                <a href="login.php">Login</a>
+                <a href="register.php">Sign Up</a> <!-- Updated link to register.php -->
+            </div>
+        </nav>
+        <header class="header">
+            <div class="content">
+                <h1><span>Get Quick</span><br />Medical Services</h1>
+                <p>
+                    In today's fast-paced world, access to prompt and efficient medical
+                    services is of paramount importance. When faced with a medical
+                    emergency or seeking immediate medical attention, the ability to
+                    receive quick medical services can significantly impact the outcome
+                    of a situation.
+                </p>
+                <button class="btn">Get Services</button>
+            </div>
+            <div class="image">
+                <span class="image__bg"></span>
+                <img src="img2.jpeg" alt="header image" />
+                <div class="image_content imagecontent_1">
+                    <span><i class="ri-user-3-line"></i></span>
+                    <div class="details">
+                        <p>Healthy People</p>
+                    </div>
+                </div>
+                <div class="image_content imagecontent_2">
+                    <ul>
+                        <li>
+                            <span><i class="ri-check-line"></i></span>
+                            Expert Doctors
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </header>
+    </div>
+    <script>
+        // Function to toggle the dropdown visibility
+        function toggleDropdown() {
+            var dropdown = document.getElementById("myDropdown");
+            dropdown.style.display = (dropdown.style.display === "block") ? "none" : "block";
+        }
+        
+        // Close the dropdown if the user clicks outside of it
+        window.onclick = function(event) {
+            if (!event.target.matches('.dropdown-button')) {
+                var dropdowns = document.getElementsByClassName("dropdown-content");
+                for (var i = 0; i < dropdowns.length; i++) {
+                    var openDropdown = dropdowns[i];
+                    if (openDropdown.style.display === "block") {
+                        openDropdown.style.display = "none";
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>
+<?php
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+session_start();
+require_once 'dbConfig.php';
+
+// Check if the user is logged in
+if (!isset($_SESSION['username'])) {
+    // Redirect to the login page if not logged in
+    header("Location: login.php");
+    exit;
+}
+
+// Check if the form is submitted
+if(isset($_POST['submit'])) {
+    // Retrieve form data
+    $username = $_SESSION['username'];
+    $name = $_POST['name'];
+    $phone = $_POST['phone'];
+    $address = $_POST['address'];
+    
+    // Prepare SQL statement to update user profile in the database
+    $sql = "UPDATE patients SET name=?, phone=?, address=? WHERE username=?";
+    $stmt = $conn->prepare($sql);
+
+    // Check if the statement was prepared successfully
+    if ($stmt === false) {
+        die('Error preparing statement: ' . $conn->error);
+    }
+    
+    // Bind parameters
+    $stmt->bind_param("ssss", $name, $phone, $address, $username);
+
+    // Execute the statement
+    if($stmt->execute()) {
+        // Profile updated successfully
+        echo "Profile updated successfully";
+        // Redirect to the dashboard
+        header("Location: dashboard.php");
+        exit;
+    } else {
+        // Error updating profile
+        echo "Error updating profile: " . $stmt->error;
+    }
+
+    // Close the statement
+    $stmt->close();
+}
+?>
+<?php
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+session_start();
+require_once 'dbConfig.php';
+
+// Check if the form is submitted
+if (isset($_POST['submit'])) {
+    // Get username and password from the form
+    $username = $_POST['username'];
+    $password = $_POST['password'];
+
+    // Prepare SQL statement to fetch user's hashed password from the database
+    $sql = "SELECT password_hash FROM users WHERE username = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("s", $username);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result->num_rows == 1) {
+        // User found, fetch the hashed password
+        $row = $result->fetch_assoc();
+        $hashedPasswordFromDatabase = $row['password_hash'];
+
+        // Verify the entered password against the hashed password from the database
+        if (password_verify($password, $hashedPasswordFromDatabase)) {
+            // Passwords match, set session variables and redirect to dashboard
+            $_SESSION['username'] = $username;
+            header("Location: dashboard.php");
+            exit();
+        } else {
+            // Passwords do not match, show error message
+            header("Location: login.php?error=invalid_credentials");
+            exit();
+        }
+    } else {
+        // User not found, show error message
+        header("Location: login.php?error=user_not_found");
+        exit();
+    }
+
+    // Close the statement and database connection
+    $stmt->close();
+    $conn->close();
+}
+?>
+<?php
+session_start();
+require_once 'dbConfig.php';
+
+if(isset($_POST['register'])){
+    $username = $_POST['username'];
+    $email = $_POST['email'];
+    $password = $_POST['password']; // Note: Do not hash the password here
+    $role = $_POST['role'];
+
+    // Hash the password
+    $password_hash = password_hash($password, PASSWORD_DEFAULT);
+
+    // Insert data into the appropriate table based on the selected role
+    switch ($role) {
+        case 'patient':
+            $sql = "INSERT INTO patients (user_id, name, phone_no, gender, address, username, email, password_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+            break;
+        case 'doctor':
+            $sql = "INSERT INTO doctors (user_id, name, phone_no, hospital_details, username, email, password_hash) VALUES (?, ?, ?, ?, ?, ?, ?)";
+            break;
+        case 'admin':
+            // Insert into admin table if needed
+            break;
+        default:
+            // Handle invalid role
+            echo "Invalid role";
+            exit;
+    }
+
+    // Prepare the SQL statement
+    $stmt = $conn->prepare($sql);
+
+    // Bind parameters and execute the statement
+    switch ($role) {
+        case 'patient':
+            $stmt->bind_param("isssssss", $user_id, $name, $phone_no, $gender, $address, $username, $email, $password_hash);
+            break;
+        case 'doctor':
+            $stmt->bind_param("issssss", $user_id, $name, $phone_no, $hospital_details, $username, $email, $password_hash);
+            break;
+    }
+    
+    // Set user_id
+    $user_id = getUserId(); // You need to define this function to retrieve the user_id based on the username or email
+    
+    // Execute the statement
+    $stmt->execute();
+
+    // Check if the insertion was successful
+    if ($stmt->affected_rows > 0) {
+        // Registration successful
+        header('Location: login.php'); // Redirect to the login page
+        exit;
+    } else {
+        // Registration failed
+        echo "Error: Registration failed";
+    }
+
+    // Close the statement
+    $stmt->close();
+}
+
+// Function to get user_id based on username or email
+function getUserId() {
+    // You need to implement this function to retrieve the user_id based on the username or email
+    // Example: Query the users table to get the user_id based on the username or email
+}
+?>
